@@ -43,7 +43,7 @@ var a = document.createElement('a');
 var linkText = document.createTextNode("Can't login? Try give permissions here");
 a.appendChild(linkText);
 a.title = "Can't login? Try give permissions here";
-a.href = "https://oauth.vk.com/authorize?client_id=8174844&client_secret=PCxAqdLvfGoMpeFamiIz&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,photos,groups&response_type=token&v=5.131&grant_type=client_credentials";
+a.href = "https://oauth.vk.com/authorize?client_id=8174844&client_secret=PCxAqdLvfGoMpeFamiIz&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,photos,groups,wall&response_type=token&v=5.131&grant_type=client_credentials";
 
 document.body.appendChild(a);
 a.style.display= 'none';

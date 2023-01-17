@@ -381,6 +381,9 @@ function myFunction_get(){
 
 self.entries=new Array();
 const URL = self.link;
+
+
+
 if (URL.includes("https://vk.com/friends"))
 {
 if (URL.includes("id"))
@@ -449,7 +452,315 @@ console.log('F5');
 
 
 }
+else if ((URL.includes("wall"))&&(!URL.includes("_")))
+{
+console.log("WHOLE WALL")
+
+id = "";
+
+if (URL.includes("?"))
+{
+id = URL.substring(
+    URL.indexOf("wall")+4,
+	URL.indexOf("?")
+);
+}
 else
+{
+id = URL.substring(
+    URL.indexOf("wall")+4,
+	
+);
+
+}
+
+console.log(id)
+
+
+
+var done = 0;
+
+var cnt = 0;
+var items;
+
+//======================
+
+
+
+fetch('https://api.vk.com/method/wall.get?owner_id='+id+'&filter=owner&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+credentials: 'include',
+method: 'GET',
+  headers: {
+    "Accept": 'text/plain',
+  },
+
+},
+).then(response => {
+console.log('2.5 fetch is complete')
+  if (response.ok) {
+    response.json().then(json => {
+
+console.log("OK");
+console.log(json.response);      
+
+if(json.response !== undefined){
+
+
+self.items = json.response.items;
+
+cnt = Object.keys(self.items).length;
+
+console.log("count "+cnt);
+
+i1=-1;
+items2 = [];
+
+o = 0;
+
+if (Object.keys(self.items).length==1)
+{
+//=============================
+fetch('https://api.vk.com/method/wall.getComments?owner_id='+id+'&post_id='+self.items[0].id+'&count=100&thread_items_count=10&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+credentials: 'include',
+method: 'GET',
+  headers: {
+    "Accept": 'text/plain',
+  },
+
+},
+).then(response => {
+console.log('2.5 fetch is complete')
+  if (response.ok) {
+    response.json().then(json => {
+
+i1++;
+
+console.log(i1);
+console.log(Object.keys(self.items).length);
+
+console.log(json.response);   
+   
+if(json.response !== undefined){
+self.items2.push(json.response.items);
+}
+else
+{
+self.items2.push(null);
+}
+
+console.log(self.items2);
+
+if((json.response !== undefined)&&(self.items2[i1]!=null)){
+
+for (var j = 0; j< Object.keys(self.items2[i1]).length;j++)
+{
+self.entries.push(self.items2[i1][j].from_id);
+
+
+
+for (var k = 0; k< Object.keys(self.items2[i1][j]).length;k++)
+{
+
+//console.log(self.items2[i1][j].thread.items[k]);
+//console.log(self.items2[i1][j].thread.items[k].from_id);
+if (self.items2[i1][j].thread.items[k]!=undefined)
+self.entries.push(self.items2[i1][j].thread.items[k].from_id);
+
+}
+
+console.log(self.entries);
+
+
+
+
+}
+
+
+
+}
+
+
+//=======================
+
+
+self.entries= Array.from(new Set(self.entries));
+console.log(self.entries);
+
+
+
+done++;
+
+console.log(done);
+console.log(cnt);
+
+if (done==cnt)
+{
+self.starttime = performance.now();
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+limit =self.entries.length- 1;
+console.log(limit);
+
+
+
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 2500) );
+
+
+console.log('F5');
+}
+
+
+
+
+});
+}
+});
+
+//==============================
+
+}
+else
+{
+
+for (var i = 0; i< Object.keys(self.items).length; i++)
+{
+
+//=======================
+
+
+
+fetch('https://api.vk.com/method/wall.getComments?owner_id='+id+'&post_id='+self.items[i].id+'&count=100&thread_items_count=10&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+credentials: 'include',
+method: 'GET',
+  headers: {
+    "Accept": 'text/plain',
+  },
+
+},
+).then(response => {
+console.log('2.5 fetch is complete')
+  if (response.ok) {
+    response.json().then(json => {
+
+i1++;
+
+console.log(i1);
+console.log(Object.keys(self.items).length);
+
+console.log(json.response);   
+   
+if(json.response !== undefined){
+self.items2.push(json.response.items);
+}
+else
+{
+self.items2.push(null);
+}
+
+console.log(self.items2);
+
+if((json.response !== undefined)&&(self.items2[i1]!=null)){
+
+for (var j = 0; j< Object.keys(self.items2[i1]).length;j++)
+{
+self.entries.push(self.items2[i1][j].from_id);
+
+
+
+for (var k = 0; k< Object.keys(self.items2[i1][j]).length;k++)
+{
+
+//console.log(self.items2[i1][j].thread.items[k]);
+//console.log(self.items2[i1][j].thread.items[k].from_id);
+if (self.items2[i1][j].thread.items[k]!=undefined)
+self.entries.push(self.items2[i1][j].thread.items[k].from_id);
+
+}
+
+console.log(self.entries);
+
+
+
+
+}
+
+
+
+}
+
+
+//=======================
+
+
+self.entries= Array.from(new Set(self.entries));
+console.log(self.entries);
+
+
+
+done++;
+
+console.log(done);
+console.log(cnt);
+
+if (done==cnt)
+{
+self.starttime = performance.now();
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+limit =self.entries.length- 1;
+console.log(limit);
+
+
+
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 2500) );
+
+
+console.log('F5');
+}
+
+
+
+
+});
+}
+});
+
+}
+
+
+
+
+
+}
+
+//=====================
+
+
+
+//=====================
+
+
+
+}
+
+
+});
+}
+});
+
+
+
+
+
+
+}
+else if ((URL.includes("wall"))&&(URL.includes("_")))
 {
 
 const URL = self.link;
@@ -464,7 +775,7 @@ var mySub = "1";
 
 text = text.substring(
     0, 
-    text.indexOf("<div class=\"reply_fakebox_container\">")
+    text.indexOf("<div id=\"footer_wrap\"")
 );
 
 
@@ -473,10 +784,15 @@ text = text.substring(
 while (!mySub.includes("DOCTYPE"))
 {
 mySub = "-1";
+
+text = text.replace('<a class=\"post_field_user_link _post_field_author\" href=\"/', '');
+
 mySub = text.substring(
     text.indexOf("author\" href=\"/")+15, 
     text.indexOf("data-from-id=")-2
 );
+
+console.log(mySub);
 
 if (!mySub.includes("DOCTYPE"))
 {
@@ -593,6 +909,9 @@ id = self.messg.content[0];
 
 
 if (self.training == true){
+
+//console.log(self.entries);
+
 	if (self.order<limit)
 {
 console.log("["+(self.order+1)+"]"+" Switching to this id..")
