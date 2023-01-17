@@ -290,6 +290,8 @@ self.single = 0;
 self.order= stord; //-1
 myorder= stord; //-1
 
+limit =self.messg.content[3].length - 1;
+console.log(limit);
 
 self.starttime = performance.now();
 
@@ -320,6 +322,36 @@ self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFuncti
 console.log('F5+F2');
 } 
 
+else if (message.type == 'f8') {
+
+modified = 0;
+
+self.messg=message;
+self.single=0;
+self.link = self.messg.content[0];
+self.training = true;
+self.totalgoals=0;
+self.goals=0;
+self.mult = 0.7;
+
+
+self.single = 0;
+
+self.order= stord; //-1
+myorder= stord; //-1
+
+
+
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction_get.call(this); }, 100) );
+console.log('F8');
+}
+
 else if (message.type == 'code'){
   mySubString = message.content;
 console.log("Set code:" + mySubString);
@@ -342,6 +374,151 @@ function results(){
 console.log("Done");
 
 }
+
+
+function myFunction_get(){
+
+
+self.entries=new Array();
+const URL = self.link;
+if (URL.includes("https://vk.com/friends"))
+{
+if (URL.includes("id"))
+{
+id = URL.substring(
+    URL.indexOf("?id=")+4, 
+    URL.indexOf("&section")
+);
+}
+else
+id = "";
+
+console.log("friend");
+console.log(id);
+
+
+
+
+
+
+
+
+
+fetch('https://api.vk.com/method/friends.get?user_id='+id+'&count=200&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+credentials: 'include',
+method: 'GET',
+  headers: {
+    "Accept": 'text/plain',
+  },
+
+},
+).then(response => {
+console.log('2.5 fetch is complete')
+  if (response.ok) {
+    response.json().then(json => {
+
+console.log(json.response);      
+
+if(json.response !== undefined){
+
+for (var i = 0; i< Object.keys(json.response.items).length;i++)
+{
+self.entries.push(json.response.items[i]);
+}
+
+console.log(self.entries);
+self.starttime = performance.now();
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+limit =self.entries.length- 1;
+console.log(limit);
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 1100) );
+console.log('F5');
+
+
+
+
+}
+
+});
+}
+});
+
+
+}
+else
+{
+
+const URL = self.link;
+fetch(URL)
+.then(res => res.text())
+.then(text => {
+    //console.log(text);
+
+
+
+var mySub = "1";
+
+text = text.substring(
+    0, 
+    text.indexOf("<div class=\"reply_fakebox_container\">")
+);
+
+
+
+
+while (!mySub.includes("DOCTYPE"))
+{
+mySub = "-1";
+mySub = text.substring(
+    text.indexOf("author\" href=\"/")+15, 
+    text.indexOf("data-from-id=")-2
+);
+
+if (!mySub.includes("DOCTYPE"))
+{
+text=text.replace('author\" href=\"/', '');
+text=text.replace('data-from-id=', '');
+
+self.entries.push(mySub);
+console.log(self.entries);
+}
+
+
+}
+
+Array.prototype.unique = function() {
+    return Array.from(new Set(this));
+}
+self.entries= self.entries.unique();
+console.log(self.entries);
+
+self.starttime = performance.now();
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+limit =self.entries.length- 1;
+console.log(limit);
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 1100) );
+console.log('F5');
+
+
+//console.log(text);
+})
+.catch(err => console.log(err));
+}
+
+
+
+}
+
+
+
 
 
 function myFunction5(){
@@ -400,28 +577,41 @@ if ( ((self.training==true)&&(self.order<limit))||(self.training==false) )
 
 
 
-
-
+if (self.messg.type!="f8")
 self.entries=self.messg.content[3];
 
 
 
-
+console.log(Object.keys(self.messg).length);
+console.log((self.messg));
 
 <!-- initial -->
+if (self.messg.type!="f8")
 id = self.messg.content[0];
+
+
+
+
 if (self.training == true){
 	if (self.order<limit)
 {
 console.log("["+(self.order+1)+"]"+" Switching to this id..")
 self.order = self.order+1;
 
-
+if (self.messg.type!="f8")
+{
 var res = self.entries[self.order].split("com/");
 var b = res[0], c = res[1];
 
+
 	id = c;
 self.messg.content[0] = id;
+}
+else
+{
+id = self.entries[self.order];
+self.messg.content[0] = id;
+}
 console.log("Extracted id from list: "+id);
 mistake = 0;
 

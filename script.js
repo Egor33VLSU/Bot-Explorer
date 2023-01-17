@@ -122,6 +122,27 @@ window.t2=setInterval(myTimer2, 1);
 }
 
 
+
+document.getElementById("myButton8").addEventListener("click", myFunction8);
+function myFunction8(){
+window.training = true;
+
+chrome.tabs.query({currentWindow: true, active: true}, function(tabs){
+
+var res = tabs[0].url
+
+setTimeout(() => { console.log('Hello Timeout!'); chrome.runtime.sendMessage({content: [res,mySubString,window.training], type: "f8"}); }, 1000);
+
+
+
+});
+
+
+
+
+};
+
+
 document.getElementById("myButton7").addEventListener("click", myFunction765);
 function myFunction765(){
 window.training = true;
