@@ -143,6 +143,131 @@ setTimeout(() => { console.log('Hello Timeout!'); chrome.runtime.sendMessage({co
 };
 
 
+document.getElementById("myButton9").addEventListener("click", myFunction99);
+function myFunction99(){
+
+
+
+chrome.runtime.sendMessage(({content:' ', type:"f9"}), function (response99) {
+
+window.arr =response99;
+if (window.arr!=undefined)
+if (window.arr.length>0)
+{
+console.log("OK!");
+console.log(window.arr);
+
+function generateFile(){
+	exportToCsv("Test.csv", window.arr );
+}
+
+
+function exportToCsv(filename, rows) {
+
+
+  var processRow = function (row, row2) {
+    var finalVal = '';
+   
+      var innerValue = '';
+      if(row === 0){
+        innerValue = row.toString();
+      }
+      if(row){
+        innerValue = row.toString();
+      }
+      if (row instanceof Date) {
+        innerValue = row.toLocaleString();
+      };
+      var innerValue2 = '';
+       // innerValue2 = row2;
+
+        if(row2 === 0){
+        innerValue2 = row2.toString();
+      }
+      if(row2){
+        innerValue2 = row2.toString();
+      }
+      if (row2 instanceof Date) {
+        innerValue2 = row2.toLocaleString();
+      };
+console.log(innerValue2);	
+
+      var result = innerValue.replace(/"/g, '""');
+var result2 = innerValue2.replace(/"/g, '""');
+
+if (result2.search(/("|,|\n)/g) >= 0)
+	result2 = '"' + result2 + '"';
+
+      if (result.search(/("|,|\n)/g) >= 0)
+        result = '"' + result + '"';
+      
+      
+
+console.log(result2);
+
+  //    finalVal += result2;
+  //    finalVal += ',';
+ //     finalVal += result;
+
+finalVal += row2.toString();
+finalVal += ';';
+finalVal += row;
+
+
+    
+    return finalVal + '\n';
+  };
+
+  var csvFile = '';
+
+ console.log(rows);
+
+  for (var i = 0; i < rows[0].length; i++) {
+
+ 	if (rows[0][i]!=null)
+		csvFile += processRow(rows[0][i],rows[1][i]);
+
+  }
+
+  var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+  if (navigator.msSaveBlob) { // IE 10+
+    navigator.msSaveBlob(blob, filename);
+  } else {
+    var link = document.createElement("a");
+    if (link.download !== undefined) { // feature detection
+      // Browsers that support HTML5 download attribute
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  }
+
+
+
+generateFile();
+
+
+}
+
+
+
+
+
+});
+
+
+
+
+}
+
+
+
 document.getElementById("myButton7").addEventListener("click", myFunction765);
 function myFunction765(){
 window.training = true;
@@ -338,16 +463,17 @@ if ((window.order>=0)&&(window.order<=199))
 
   chrome.runtime.sendMessage(({content:'Hello order', type:"order"}), function (response) {
       
-       window.order=response;
-if ((window.order>=0)&&(window.order<199))
+       window.order=response[0]+1;
+window.limit =response[1]+1;
+if ((window.order-1>=0)&&(window.order<window.limit))
 {
 
-document.getElementById("demo").innerHTML = "Прогресс:" + (window.order+1)+"/200 "+((window.ticks % 60000) / 1000).toFixed(0)+" s";
+document.getElementById("demo").innerHTML = "Прогресс:" + (window.order)+"/"+window.limit+" "+((window.ticks % 60000) / 1000).toFixed(0)+" s";
 }
-else if (window.order==199)
+else if (window.order==window.limit)
 {
 
-document.getElementById("demo").innerHTML = "Done! " + (window.order+1)+"/200 "+((window.ticks % 60000) / 1000).toFixed(0)+" s";
+document.getElementById("demo").innerHTML = "Done! " + (window.order)+"/"+window.limit+" "+((window.ticks % 60000) / 1000).toFixed(0)+" s";
 window.order = -1;
 
 

@@ -1,5 +1,6 @@
 importScripts('moment-with-locales.js');
 
+
 var exc = 0;
 
 var exc1 = -1;
@@ -50,7 +51,7 @@ var target_user= {
 var blacklisted = 0;
 var ticks = 0;
 var timeouts = [];
-
+var saved_class = [];
 var mistake = 0;
     
 var starttime = 0;
@@ -77,7 +78,7 @@ console.log("Heard:" + message.type +" respond:"+mySubString);
 } 
 else if (message.type == 'order') {
 
-  sendResponse(myorder);
+  sendResponse([myorder,limit]);
 
 
 
@@ -274,6 +275,8 @@ else
 } 
 else if (message.type == 'f5') {
 modified = 0;
+self.err = false;
+self.saved_class = [];
 
 self.messg=message;
 self.single=0;
@@ -281,9 +284,11 @@ self.training = self.messg.content[2];
 self.totalgoals=0;
 self.goals=0;
 if (self.training == true)
-self.mult = 0.7;
+self.mult = 1;
 else
-self.mult = 0.7;
+self.mult = 1;
+
+rs = new Array();
 
 self.single = 0;
 
@@ -298,7 +303,7 @@ self.starttime = performance.now();
 console.log("Heard:" + message.type);
 console.log(message.content);
 
-self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 1100) );
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 200) );
 console.log('F5');
 
 } 
@@ -306,7 +311,11 @@ else if (message.type == 'f2') {
 modified = 0;
 self.training = false;
 self.messg=message;
-self.mult = 0.7; //0
+self.mult = 1; //0
+self.err = false;
+self.saved_class = [];
+
+reslt = new Array();
 
 
 self.order=-1;
@@ -318,11 +327,22 @@ self.goals=0;
 console.log("Heard:" + message.type);
 console.log(message.content);
  
-self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 100) );
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 200) );
 console.log('F5+F2');
 } 
 
+
+else if (message.type == 'f9') {
+if (self.saved_class.length>0)
+sendResponse(self.saved_class);
+
+} 
+
 else if (message.type == 'f8') {
+self.err = false;
+self.saved_class = [];
+
+rs = new Array();
 
 modified = 0;
 
@@ -332,7 +352,7 @@ self.link = self.messg.content[0];
 self.training = true;
 self.totalgoals=0;
 self.goals=0;
-self.mult = 0.7;
+self.mult = 1;
 
 
 self.single = 0;
@@ -348,7 +368,7 @@ console.log(message.content);
 
 
 
-self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction_get.call(this); }, 100) );
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction_get.call(this); }, 200) );
 console.log('F8');
 }
 
@@ -487,7 +507,7 @@ var items;
 
 
 
-fetch('https://api.vk.com/method/wall.get?owner_id='+id+'&filter=owner&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+fetch('https://api.vk.com/method/wall.get?owner_id='+id+'&filter=owner&count=100&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
 credentials: 'include',
 method: 'GET',
   headers: {
@@ -603,10 +623,11 @@ console.log(message.content);
 limit =self.entries.length- 1;
 console.log(limit);
 
+waiting = 100*limit;
+if (waiting > 5000)
+waiting = 5000;
 
-
-
-self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 2500) );
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, waiting) );
 
 
 console.log('F5');
@@ -625,14 +646,32 @@ console.log('F5');
 else
 {
 
-for (var i = 0; i< Object.keys(self.items).length; i++)
+
+var i = -1;
+var del = 100;
+
+myLoop();
+function myLoop() { 
+self.timeouts.push( setTimeout(() => { 
+
+i++;
+
+if (i< Object.keys(self.items).length)
 {
 
 //=======================
 
 
+if (self.items[i].comments.count>0)
+del=1000;
+else
+del=0;
 
-fetch('https://api.vk.com/method/wall.getComments?owner_id='+id+'&post_id='+self.items[i].id+'&count=100&thread_items_count=10&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
+if (self.items[i].comments.count>0)
+{
+console.log(self.items[i]);
+
+fetch('https://api.vk.com/method/wall.getComments?owner_id='+id+'&post_id='+self.items[i].id+'&count=100&sort=desc&thread_items_count=10&access_token='+ self.messg.content[1] + '&v=5.131', {mode: 'cors', dest: 'document',
 credentials: 'include',
 method: 'GET',
   headers: {
@@ -722,14 +761,54 @@ self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFuncti
 
 
 console.log('F5');
-}
 
+}
+else
+{
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myLoop.call(this); }, 500) );
+
+}
 
 
 
 });
 }
 });
+}
+else
+{
+done++;
+
+if (done==cnt)
+{
+self.starttime = performance.now();
+
+console.log("Heard:" + message.type);
+console.log(message.content);
+
+limit =self.entries.length- 1;
+console.log(limit);
+
+
+
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myFunction5.call(this); }, 2500) );
+
+
+console.log('F5');
+
+}
+
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!');   myLoop.call(this); }, 50) );
+}
+
+}
+
+
+
+
+
+}, del       ) );
 
 }
 
@@ -839,8 +918,95 @@ console.log('F5');
 
 function myFunction5(){
 
+c1 = 0;
+c2 = 0;
+c3 = 0;
+c4 = 0;
+c5 = 0;
+c6 = 0;
+c7 = 0;
+c8 = 0;
+c9 = 0;
+c10 = 0;
+c11 = 0;
+c12 =0;
+totalbp = 0;
+
 self.rid = -1;
 self.err=false;
+
+self.posts_amount = 0;
+self.blacklisted = 0;
+self.totalpoints_cc = 0;
+self.points = 0;
+self.goals = 0;
+self.totalgoals = 0;
+self.totalbp = 0;
+
+
+self.c6x = 0;
+
+self.c1 = 0;
+self.c2 = 0;
+self.c3 = 0;
+self.c4 = 0;
+self.c5 = 0;
+self.c6 = 0;
+self.c7 = 0;
+self.c8 = 0;
+self.c9 = 0;
+self.c10 = 0;
+self.c11 = 0;
+self.c12 = 0;
+self.c41 = 0;
+self.c71 = 0;
+
+self.cc11 = 0;
+self.cc21 = 0;
+self.cc22 = 0;
+self.cc31 = 0;
+self.cc41 = 0;
+self.cc42 = 0;
+self.cc61 = 0;
+self.cc62 = 0;
+self.cc63 = 0;
+self.cc71 = 0;
+self.cc81 = 0;
+self.cc91 = 0;
+self.cc101 = 0;
+self.cc102 = 0;
+self.cc121A = 0;
+self.cc121B = 0;
+
+
+
+self.banned= 0;
+self.deact = 0;
+wall = [];
+repc = 0;
+pcount = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -851,6 +1017,43 @@ if (mistake == 1)
 {
 self.totalgoals=0;
 self.goals=0;
+
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
+
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+
+
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+
+
+
+}
 
 
 
@@ -970,27 +1173,76 @@ method: 'GET',
 
 setTimeout(() => {
 
+
+
+if ((json.response!=undefined)) {
+
 self.target_user = json;
+console.log("ABC:");
+console.log(self.target_user);
+
 
 if (target_user.response.hasOwnProperty('0'))
 self.name = target_user.response[0].first_name;
+
 if (target_user.response.hasOwnProperty('0'))
 self.lname = target_user.response[0].last_name;
 
+}
 
 
 
-console.log("ABC:");
-console.log(self.target_user);
 
 
 
 if ((json.response==undefined)) {
 
-mistake=1;
-if (self.training == true)
-self.order = self.order-1;
-setTimeout(() => { console.log('Reset...'); myFunction5.call(this);}, 0+(0*self.mult) );
+
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
+
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+
+
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
@@ -998,19 +1250,43 @@ setTimeout(() => { console.log('Reset...'); myFunction5.call(this);}, 0+(0*self.
 else if (((json.response==undefined))||((self.target_user==undefined))) {
 
 
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
+
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
 
 
 
 
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 
 
 
-mistake =1;
-if (self.training == true)
-self.order = self.order-1;
 
-console.log('Reset'); 
-myFunction5.call(this); 
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
 
 }
 else
@@ -1028,33 +1304,25 @@ self.order = self.order;
 
 self.myorder = self.myorder+1; 
 
-c1 = 1;
-c2 = 2;
-c3 = 1;
-c4 = 2;
-c5 = 3;
-c6 = 3;
-c7 = 1;
-c8 = 1;
-c9 = 1;
-c10 = 2;
-c11 = 1;
-c12 =1;
-totalbp = 25;
+
+self.totalgoals=tgoals;
+self.err=false;
 
 
 reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
 
-if (self.order<limit)
-{
-setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 500+(100*self.mult) );
-}
-
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 
 
 }
 else
-return;
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
 
 
 }
@@ -1736,6 +2004,30 @@ A_meets_p[i] = A_meets[i] / (asum/100);
 
 console.log("Классификация:");
 console.log(user_class);
+
+//============================================
+
+if (exc==0)
+
+{
+
+self.saved_class.push(structuredClone(user_class));
+self.saved_class.push(structuredClone(alt_reslts3[exc]));
+
+}
+
+
+
+
+
+
+
+
+
+
+
+//============================================
+
 console.log("Измененные баллы:");
 
 alt_reslts0 = new Array();
@@ -1805,6 +2097,40 @@ return;
 
 
 function myFunction2(){
+
+
+c1 = 0;
+c2 = 0;
+c3 = 0;
+c4 = 0;
+c5 = 0;
+c6 = 0;
+c7 = 0;
+c8 = 0;
+c9 = 0;
+c10 = 0;
+c11 = 0;
+c12 =0;
+
+
+self.rid = -1;
+self.err=false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 console.log("START");
 self.posts_amount = 0;
@@ -1947,11 +2273,48 @@ if ((!self.target_user)||(self.target_user == undefined))
 
 {
 if (self.training== true)
-self.order = self.order-1;
+{
 
-self.mistake = 1;
-console.log('Reset'); 
-myFunction5.call(this); 
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
+
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+
+
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
+
+}
+
 return;
 
 }
@@ -1977,7 +2340,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -1997,7 +2360,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2024,7 +2387,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2303,7 +2666,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)));
+self.timeouts.push( setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)));
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2330,7 +2693,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 
 }
 else
@@ -2391,7 +2754,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)));
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)));
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2425,7 +2788,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)));
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)));
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2450,7 +2813,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)));
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)));
 
 }
 else
@@ -2476,7 +2839,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2502,7 +2865,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2544,7 +2907,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2567,7 +2930,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2669,7 +3032,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2687,7 +3050,11 @@ else if (json.response[0].deactivated == "banned")
 deact = 1;
 self.banned = 1;
 self.totalgoals = self.totalgoals +1;
-totalbp = totalbp + i12_2;
+//totalbp = totalbp + i12_2;
+
+totalbp = 25;
+
+
 c12 = 2;
 cc121A = 1;
 if (self.training == false)
@@ -2707,7 +3074,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2738,7 +3105,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -2767,7 +3134,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3029,7 +3396,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3089,7 +3456,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3113,7 +3480,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3146,7 +3513,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3244,7 +3611,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3271,7 +3638,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3298,7 +3665,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3346,7 +3713,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3373,7 +3740,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3446,7 +3813,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3485,11 +3852,48 @@ if ( (typeof createddata[0] !== 'string') ||(createddata==undefined))
 {
 
 if (self.training== true)
-self.order = self.order-1;
-self.mistake = 1;
+{
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
 
-console.log('Reset'); 
-myFunction5.call(this); 
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+
+
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
+}
+
 return;
 }
 
@@ -3528,7 +3932,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3554,7 +3958,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3578,7 +3982,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3602,7 +4006,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3632,7 +4036,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3659,7 +4063,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3682,7 +4086,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3713,7 +4117,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3784,7 +4188,38 @@ if (self.training == false)
 console.log(json);
 }
 
+if (json.response == undefined)
+{
 
+self.totalgoals = self.totalgoals+1;
+goals = goals;
+
+
+
+
+goals = goals;
+totalbp = totalbp;
+
+if ((self.totalgoals==tgoals)   )
+
+if (self.training == true)
+{
+console.log("ok!");
+self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+}
+else
+{  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
+
+if (self.training == false)
+{
+console.log(c9 +" "+totalbp);
+console.log("[c9] ["+self.totalgoals+"/X] [target-"+self.target_user.response[0].first_name+" "+self.target_user.response[0].last_name+ " result]: failed to pass communities trust check - can't get access, no points ["+ goals+"/X]");
+}
+
+
+
+}
 
 
 
@@ -3792,10 +4227,46 @@ if (self.blacklisted==0)
 if ((json.response == undefined)&&(self.target_user.response[0].is_closed == false))
 {
 if (self.training== true)
-self.order = self.order-1;
-self.mistake = 1;
-console.log('Reset'); 
-myFunction5.call(this);
+{
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
+
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+
+
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
+}
+
 return;
 }
 
@@ -3817,7 +4288,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3900,7 +4371,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3927,7 +4398,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3958,7 +4429,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -3987,7 +4458,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4016,7 +4487,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4114,7 +4585,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4157,7 +4628,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4177,7 +4648,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4217,7 +4688,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4294,7 +4765,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4326,7 +4797,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4348,7 +4819,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4375,7 +4846,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4401,7 +4872,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4420,7 +4891,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4466,7 +4937,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4485,7 +4956,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4503,11 +4974,46 @@ if ((self.target_user==undefined)&&(self.target_user.response[0].is_closed == fa
 {
 
 if (self.training== true)
-self.order = self.order-1;
+{
+console.log("ERROR");
+self.err=true;
+if (self.training==true)
+{
 
-self.mistake = 1;
-console.log('Reset'); 
-myFunction5.call(this);
+
+self.order = self.order;
+
+self.myorder = self.myorder+1; 
+
+
+self.totalgoals=tgoals;
+self.err=false;
+
+
+reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
+
+
+
+
+self.timeouts.push(  setTimeout(() => { console.log('Skipping...'); myFunction5.call(this); }, 1000+(100*self.mult)) );
+
+
+
+
+}
+else
+{
+
+self.totalgoals=tgoals;
+self.err=false;
+reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);
+}
+
+
+
+
+}
+
 return;
 }
 
@@ -4521,7 +5027,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4545,7 +5051,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4568,7 +5074,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4589,7 +5095,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4682,7 +5188,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4703,7 +5209,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4730,7 +5236,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4893,7 +5399,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4913,7 +5419,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4946,7 +5452,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -4967,7 +5473,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5004,7 +5510,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5024,7 +5530,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5049,7 +5555,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5072,7 +5578,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5266,7 +5772,7 @@ if (self.training == true)
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
 
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5306,7 +5812,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
@@ -5337,7 +5843,7 @@ if (self.training == true)
 {
 console.log("ok!");
 self.myorder = self.myorder+1; reslts[self.myorder] = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp);
-self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1100+(100*self.mult)) );
+self.timeouts.push(  setTimeout(() => { console.log('Hello Timeout!'); myFunction5.call(this); }, 1000+(100*self.mult)) );
 }
 else
 {  reslt = new Array(self.messg.content[0],c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,totalbp); console.log("Final:"); results.call(this); console.log(reslt);}
