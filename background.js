@@ -436,7 +436,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.5 fetch is complete')
+
   if (response.ok) {
     response.json().then(json => {
 
@@ -516,7 +516,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.5 fetch is complete')
+
   if (response.ok) {
     response.json().then(json => {
 
@@ -549,7 +549,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.5 fetch is complete')
+
   if (response.ok) {
     response.json().then(json => {
 
@@ -680,7 +680,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.5 fetch is complete')
+
   if (response.ok) {
     response.json().then(json => {
 
@@ -3272,7 +3272,7 @@ fetchreq= 'https://api.vk.com/method/wall.get?owner_id='+id+'&count=200&access_t
 
 //B
 
-console.log("ДИМА B");
+
 console.log(self.mistake);
 
 var st1=1;
@@ -3303,7 +3303,7 @@ if (self.training == false)
 console.log(json.response.items);
 }
 
-console.log("ДИМА B-1");
+
 
 
 
@@ -3557,7 +3557,7 @@ console.log("[c7] ["+self.totalgoals+"/X] [target-"+self.target_user.response[0]
 
 
 
-console.log("HERE:");
+
 console.log(self.posts_amount);
 
 pcount = self.posts_amount;
@@ -3574,8 +3574,6 @@ console.log("[Target user - link points]:"+links);
 console.log("[Target user - own posts points]:"+ownc);
 }
 
-
-console.log("ДИМА");
 if (pcount==0)
 pcount = Object.keys(json.response.items).length
 console.log(pcount)
@@ -3768,7 +3766,7 @@ console.log("[c4] ["+self.totalgoals+"/X] [target-"+self.target_user.response[0]
 
 <!-- date created -->
 
-console.log("block b");
+
 
 id = self.messg.content[0];
 
@@ -4526,7 +4524,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.5 fetch is complete')
+
   if (response.ok) {
     response.json().then(json => {
 
@@ -5128,7 +5126,7 @@ method: 'GET',
 
 },
 ).then(response => {
-console.log('2.6 fetch is complete')
+
 
 console.log(response);
 
